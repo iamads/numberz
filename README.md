@@ -12,3 +12,5 @@
 	- We allot the commuter to the nearest cab.
 	- After allotments are done. We set the pickup points for each cab as the coordinates to nearest commuter.
 	- Lastly print the total distances travelled by cabs.
+
+For code look in pool.js
