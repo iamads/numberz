@@ -1,12 +1,11 @@
-const MIN_CITY_X = -50;
-const MAX_CITY_X = 50;
-const MIN_CITY_Y = -50
-const MAX_CITY_Y = 50
-
 let prompt = require('prompt-sync')();
 let cab = require('./cab');
 let commuter = require('./commuter');
 
+const MIN_CITY_X = -50;
+const MAX_CITY_X = 50;
+const MIN_CITY_Y = -50
+const MAX_CITY_Y = 50
 
 // gets location of entities for initialization
 function get_location() {
@@ -58,13 +57,15 @@ function get_cabs() {
 
 function get_nearby_cabs(min_x, max_x, min_y, max_y) {
   // This will break if there is no cab
-  console.log(min_x, max_x, min_y, max_y)
+
+  if (min_x === MIN_CITY_X && min_y === MIN_CITY_Y && max_x === MAX_CITY_X && max_y === MAX_CITY_Y ){
+    return []
+  }
+
   let nearby_cabs = [];
 
   cabs.forEach(function(cab){
-    if (cab.x >= min_x && cab.x <= max_x && cab.y >= min_y && cab.y <= max_y) {
-      console.log('shit');
-      for (var i=0; i <=1000000000; i++) {}
+    if (cab.x >= min_x && cab.x <= max_x && cab.y >= min_y && cab.y <= max_y  && cab.seats_left > 0) {
       nearby_cabs.push(cab);
     } 
   }) 
@@ -88,7 +89,7 @@ function get_nearest_cab(x, y, cabs) {
 
   cabs.forEach(function(cab){
     distance = Math.pow((cab.x - x), 2) + Math.pow((cab.y - y), 2);
-    if (distance < min && cab.seats_left > 0) {
+    if (distance < min) {
       min = distance;
       selected_cab = cab;
     }
@@ -97,18 +98,47 @@ function get_nearest_cab(x, y, cabs) {
   return selected_cab;
 }
 
+
+
 let cabs = get_cabs();
 let commuters = get_commuters();
+let total_distance_travelled_by_cabs = 0;
 
 commuters.forEach(function(commuter){
   if (!commuter.alloted){
     let nearby_cabs = get_nearby_cabs(commuter.x-1, commuter.x+1, commuter.y-1, commuter.y+1);
     let selected_cab = get_nearest_cab(commuter.x, commuter.y, nearby_cabs);
 
-    commuter.alloted = true;
-    selected_cab.seats_left -= 1;
-    selected_cab.assigned.push(commuter) 
+    if (Object.keys(selected_cab).length === 0) {
+      console.log("Error: No Cab was selected") 
+    } else {
+      commuter.alloted = true;
+      selected_cab.seats_left -= 1;
+      selected_cab.assigned.push(commuter) 
+    }
   }  
 })
 
-console.log(JSON.stringify(cabs, null, 2))
+console.log(JSON.stringify(cabs, null, 2));
+
+cabs.forEach(function(cab){
+  if (cab.assigned.length > 0) {
+    let min = Infinity;
+    let nearest_commuter = {};
+
+    cab.assigned.forEach(function(commuter) {
+      distance =  Math.sqrt(Math.pow((cab.x - commuter.x), 2) +  Math.pow((cab.y - commuter.y), 2))
+      if (min > distance) {
+        min = distance;
+        nearest_commuter = commuter;   // taking the nearest commuter from the cab as pickup point for all the commuters  
+      }
+    })
+
+    distance_to_nearest_commuter = min;
+    distance_from_origin =  Math.sqrt(Math.pow(nearest_commuter.x, 2) + Math.pow(nearest_commuter.y, 2));
+
+    total_distance_travelled_by_cabs += distance_to_nearest_commuter + distance_from_origin
+  }
+})
+
+console.log(total_distance_travelled_by_cabs)
